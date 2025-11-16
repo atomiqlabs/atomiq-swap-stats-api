@@ -70,7 +70,69 @@ paths:
                 description: "Timestamp of the last returned transaction initialization timestamp, IMPORTANT: This is not the last _ts, which should be used for pagination & polling"
         400:
           description: "Invalid query param"
+  /GetStats:
+    get:
+      summary: "Returns the aggregated swap stats"
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: object
+            properties:
+              totalSwapCount:
+                type: "integer"
+                description: "Total number of swaps"
+              totalUsdVolume:
+                type: "number"
+                description: "Total swap volume in USD"
+              currencyData:
+                type: object
+                description: "Dictionary of all the currency tickers & respective swap count and volume"
+                additionalProperties:
+                  $ref: "#/definitions/SwapVolumeUsdAndCount"
+                example:
+                  SOL:
+                    count: 1232
+                    volumeUsd: 928384.21
+                  USDC:
+                    count: 322
+                    volumeUsd: 83828.33
+              chainData:
+                type: object
+                description: "Dictionary of all the chains & respective swap count and volume"
+                additionalProperties:
+                  $ref: "#/definitions/SwapVolumeUsdAndCount"
+                example:
+                  SOLANA:
+                    count: 948
+                    volumeUsd: 3273271.21
+                  STARKNET:
+                    count: 2321
+                    volumeUsd: 87732132.33
+              timeframes:
+                type: object
+                description: "Swap counts and volume processed in the last 24 hours, 7 days and 30 days"
+                properties:
+                  24h:
+                    $ref: "#/definitions/SwapVolumeUsdAndCount"
+                  7d:
+                    $ref: "#/definitions/SwapVolumeUsdAndCount"
+                  30d:
+                    $ref: "#/definitions/SwapVolumeUsdAndCount"
+        400:
+          description: "Invalid query param"
 definitions:
+  SwapVolumeUsdAndCount:
+    type: object
+    properties:
+      count:
+        type: integer
+        description: "Count of swaps"
+      volumeUsd:
+        type: number
+        description: "Volume of swaps in USD"
   SwapTransaction:
     type: object
     properties:

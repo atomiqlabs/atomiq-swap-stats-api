@@ -51,10 +51,9 @@ async function refreshCache(context) {
 
     const chainData = {};
     for(let chain of chainDataFor) {
-        const {resources, requestCharge} = await container.items.query("SELECT COUNT(1) AS count, SUM(c._tokenAmount) AS volume, SUM(c._usdValue) AS volumeUsd FROM c WHERE c.success AND c.chainId=\""+chain+"\"").fetchAll();
+        const {resources, requestCharge} = await container.items.query("SELECT COUNT(1) AS count, SUM(c._usdValue) AS volumeUsd FROM c WHERE c.success AND c.chainId=\""+chain+"\"").fetchAll();
         chainData[chain] = {
             count: resources[0].count,
-            volume: resources[0].volume,
             volumeUsd: Math.round(resources[0].volumeUsd*100)/100
         };
         totalQueryCharge += requestCharge;
