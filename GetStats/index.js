@@ -1,6 +1,7 @@
 ﻿const {container} = require("../libs/db");
 
 const currencyDataFor = process.env.ASSETS.split(",");
+const chainDataFor = process.env.CHAINS.split(",");
 
 const CACHE_TIMEOUT = 60*1000;
 
@@ -48,6 +49,17 @@ async function refreshCache(context) {
         totalQueryCharge += requestCharge;
     }
 
+    const chainData = {};
+    for(let chain of chainDataFor) {
+        const {resources, requestCharge} = await container.items.query("SELECT COUNT(1) AS count, SUM(c._tokenAmount) AS volume, SUM(c._usdValue) AS volumeUsd FROM c WHERE c.success AND c.chainId=\""+chain+"\"").fetchAll();
+        chainData[chain] = {
+            count: resources[0].count,
+            volume: resources[0].volume,
+            volumeUsd: Math.round(resources[0].volumeUsd*100)/100
+        };
+        totalQueryCharge += requestCharge;
+    }
+
     context.log("Request query charge: ", totalQueryCharge);
 
     cache = {
@@ -55,6 +67,7 @@ async function refreshCache(context) {
             totalSwapCount,
             totalUsdVolume,
             currencyData,
+            chainData,
             timeframes
         },
         timestamp: Date.now()
