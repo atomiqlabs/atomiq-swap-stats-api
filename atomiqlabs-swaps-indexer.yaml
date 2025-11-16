@@ -1,0 +1,175 @@
+swagger: "2.0"
+info:
+  description: "This is the API of the atomiqlabs swaps indexer, indexing the swaps done through atomiq.exchange"
+  version: "1.0.0"
+  title: "atomiqlabs swaps indexer API"
+  contact:
+    email: "adam@atomiqlabs.com"
+host: "api.atomiq.exchange"
+basePath: "/api"
+schemes:
+- "https"
+paths:
+  /GetSwapList:
+    get:
+      summary: "Returns the list of swaps"
+      description: "Multiple status values can be provided with comma separated strings"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "startTs"
+        in: "query"
+        description: "UNIX seconds, returns the swaps that changed AFTER the provided startTs (non-inclusive)"
+        type: "integer"
+        format: uint32
+      - name: "endTs"
+        in: "query"
+        description: "UNIX seconds, returns the swaps that changed BEFORE the provided endTs (non-inclusive), can be combined with startTs to paginate"
+        type: "integer"
+        format: uint32
+      - name: "limit"
+        in: "query"
+        description: "Limits the amount of swaps that can be returned"
+        type: "integer"
+        format: uint32
+        default: 50
+        maximum: 100
+        minimum: 10
+      - name: "chain"
+        in: "query"
+        description: "Only return swaps for specific chainIds, currently: BITCOIN, LIGHTNING, SOLANA, STARKNET, BOTANIX"
+        type: "array"
+        items:
+          type: string
+      - name: "token"
+        in: "query"
+        description: "Only return swaps for specific token tickers"
+        type: "array"
+        items:
+          type: string
+      - name: "search"
+        in: "query"
+        description: "Finds swaps related to the provided txId or wallet address"
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: object
+            properties:
+              data:
+                type: "array"
+                items:
+                  $ref: "#/definitions/SwapTransaction"
+              last:
+                type: "boolean"
+                description: "Whether there is more data to paginate through"
+              endTime:
+                type: "integer"
+                format: uint32
+                description: "Timestamp of the last returned transaction initialization timestamp, IMPORTANT: This is not the last _ts, which should be used for pagination & polling"
+        400:
+          description: "Invalid query param"
+definitions:
+  SwapTransaction:
+    type: object
+    properties:
+      id:
+        type: string
+        description: "Indexer generated ID of the swap"
+      paymentHash:
+        type: string
+        description: "Payment hash identification of the swap"
+      timestampInit:
+        type: integer
+        format: uint32
+        description: "Timestmap (UNIX seconds) of the init transaction (escrow initialization)"
+      timestampFinish:
+        type: integer
+        format: uint32
+        description: "Timestmap (UNIX seconds) of the claim/refund transaction (escrow claimed or refunded)"
+      type:
+        type: string
+        enum: 
+          - LN
+          - CHAIN
+        description: "Indicates type of the swap LN - Lightning network (L2), CHAIN - On-chain (L1)"
+      direction:
+        type: string
+        enum: 
+          - ToBTC
+          - FromBTC
+        description: "Swap direction"
+      kind:
+        type: integer  # Assuming ChainSwapType is a string; modify as needed
+        description: "Internal swap type, 0 - HTLC, 1 - CHAIN, 2 - CHAIN_NONCED, 3 - CHAIN_TXID"
+      nonce:
+        type: string
+        description: "Nonce to prevent replay attacks for ToBTC (on-chain) swaps"
+      sequence:
+        type: string
+        description: "Sequence unique for the payment hash, to prevent replay attacks on cooperative refunds"
+      lpWallet:
+        type: string
+        description: "Wallet address of the LP (liquidity provider) handling the swap"
+      clientWallet:
+        type: string
+        description: "Wallet address of the client performing the swap"
+      token:
+        type: string
+        description: "Swap token address"
+      tokenName:
+        type: string
+        description: "Swap token ticker"
+      tokenAmount:
+        type: string
+        description: "Swap token amount (human readable with decimal point)"
+      rawAmount:
+        type: string
+        description: "Swap token amount (raw in base units)"
+      txInit:
+        type: string
+        description: "Transaction ID of the escrow initialization transaction"
+      txFinish:
+        type: string
+        description: "Transaction ID of the escrow claim/refund transaction"
+      btcTx:
+        type: string
+        description: "Transaction ID on the bitcoin side, only available for successfully processed on-chain swaps"
+      btcOutput:
+        type: integer
+        format: int32
+        description: "Bitcoin transaction vout (transaction output index), only available for successfully processed on-chain swaps"
+      btcAddress:
+        type: string
+        description: "Bitcoin address receiving the funds on bitcoin (this is LP's address for FromBTC swaps & client's address for ToBTC swaps), only available for successfully processed on-chain swaps"
+      btcAmount:
+        type: string
+        description: "Bitcoin amount (human readable with decimal point), only available for successfully processed on-chain swaps"
+      btcRawAmount:
+        type: string
+        description: "Bitcoin amount (raw in base units - sats), only available for successfully processed on-chain swaps"
+      btcInAddresses:
+        type: array
+        items:
+          type: string
+        description: "Bitcoin transaction's input addresses (these are LP's for ToBTC swaps & client's for FromBTC swaps), only available for successfully processed on-chain swaps"
+      success:
+        type: boolean
+        description: "Whether this swap was successful (i.e. claimed) or failed (i.e. refunded)"
+      finished:
+        type: boolean
+        description: "Whether this swap was finished (i.e. claimed or refunded)"
+      price:
+        type: string
+        description: "Swap token's price (as fetched from CEXes at the time of the swap initialization)"
+      usdValue:
+        type: string
+        description: "Swap token's value in USD (as fetched from CEXes at the time of the swap initialization)"
+      _ts:
+        type: integer
+        format: uint32
+        description: "Timestamp (UNIX seconds) of the last update to the swap"
+externalDocs:
+  description: "Find out more about atomiq"
+  url: "https://docs.atomiq.exchange/"

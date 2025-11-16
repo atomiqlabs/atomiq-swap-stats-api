@@ -8,6 +8,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@azure/cosmos": "4.0.0"
+    "@azure/cosmos": "^4.7.0"
   }
 }

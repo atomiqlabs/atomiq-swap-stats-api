@@ -14,7 +14,7 @@ Query options:
     - endTime?
 
     - token?
-
+    - chain?
     - search?
 
     - clientAddress?
@@ -119,21 +119,28 @@ module.exports = async function (context, req) {
     }
 
     if(req.query.token!=null) {
-        if(
-            currencyDataFor.includes(req.query.token)
-        ) {
-            context.res = {
-                status: 400,
-                body: "Invalid query param"
-            };
-            return;
+        const tokens = Array.isArray(req.query.token)
+            ? req.query.token
+            : [req.query.token];
+        const tokenQueryParams = [];
+        for(let i=0;i<tokens.length;i++) {
+            const token = tokens[i];
+            if(currencyDataFor.includes(token)) {
+                context.res = {
+                    status: 400,
+                    body: "Invalid query param (token)"
+                };
+                return;
+            }
+
+            tokenQueryParams.push("c.tokenName = @tokenName"+i);
+            values.push({
+                name: "@tokenName"+i,
+                value: token
+            });
         }
 
-        queryParams.push("c.tokenName = @tokenName");
-        values.push({
-            name: "@tokenName",
-            value: req.query.token
-        });
+        if(tokenQueryParams.length>0) queryParams.push("("+tokenQueryParams.join(" OR ")+")");
     }
 
     if(req.query.clientAddress!=null) {
@@ -152,6 +159,34 @@ module.exports = async function (context, req) {
             name: "@clientAddress",
             value: req.query.clientAddress
         });
+    }
+
+    if(req.query.chain!=null) {
+        const chains = Array.isArray(req.query.chain)
+            ? req.query.chain
+            : [req.query.chain];
+
+        const chainQueryParams = [];
+
+        for(let i=0;i<chains.length;i++) {
+            const chain = chains[i];
+
+            if(chain==="BITCOIN") {
+                chainQueryParams.push("c.type = \"CHAIN\"");
+            } else if(chain==="LIGHTNING") {
+                chainQueryParams.push("c.type = \"LN\"");
+            } else if(chain==="SOLANA") {
+                chainQueryParams.push("(c.chainId = \"SOLANA\" OR NOT isDefined(c.chainId))");
+            } else {
+                chainQueryParams.push("c.chainId = @chainId");
+                values.push({
+                    name: "@chain"+i,
+                    value: chain
+                });
+            }
+        }
+
+        if(chainQueryParams.length>0) queryParams.push("("+chainQueryParams.join(" OR ")+")");
     }
 
     if(req.query.chainId!=null) {
