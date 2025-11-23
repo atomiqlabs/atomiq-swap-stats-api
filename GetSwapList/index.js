@@ -300,6 +300,7 @@ module.exports = async function (context, req) {
     }
 
     resp.resources.forEach(e => {
+        e.chainId ??= "SOLANA";
         delete e._rid;
         delete e._self;
         delete e._etag;

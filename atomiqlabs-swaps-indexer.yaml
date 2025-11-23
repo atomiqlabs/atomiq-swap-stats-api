@@ -142,6 +142,9 @@ definitions:
       paymentHash:
         type: string
         description: "Payment hash identification of the swap"
+      chainId:
+        type: string
+        description: "Chain ID of the smart-chain side of the swap, currently: SOLANA, STARKNET, BOTANIX"
       timestampInit:
         type: integer
         format: uint32
